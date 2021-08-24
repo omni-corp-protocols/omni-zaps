@@ -15,4 +15,26 @@ contract MockExternalContract {
         num = _num;
         value = msg.value;
     }
+
+    function setStrAndAddr(string memory _str, address _addr) public {
+        str = _str;
+        addr = _addr;
+    }
+
+    function setStrAddrAndValue(string memory _str, address _addr) public payable {
+        str = _str;
+        addr = _addr;
+        value = msg.value;
+    }
+
+    function revertWithReason(string memory _reason) public {
+        num = num;
+        revert(_reason);
+    }
+
+    function revertWithoutReason() public {
+        num = num;
+        // solhint-disable-next-line
+        revert();
+    }
 }
