@@ -6,7 +6,7 @@ import { numToWei } from "../utils/ethUnitParser";
 import { toBn } from "../utils/bn";
 import { encodeParameters } from "../utils/ethUtils";
 
-import { Zap, MockExternalContract } from "../typechain";
+import { Zap, MockExternalContract, MockERC20 } from "../typechain";
 
 const getTotalValues = (valuesInEthArray: string[]): string => {
   const sum = valuesInEthArray.reduce((acc, currentValue) => toBn(acc).plus(toBn(currentValue)), toBn("0"));
@@ -20,6 +20,7 @@ describe("Zap", () => {
   let zap: Zap;
   let mExt: MockExternalContract;
   let mExt2: MockExternalContract;
+  let mErc20: MockERC20;
 
   before(async () => {
     [admin, user1, user2] = await ethers.getSigners();
@@ -41,7 +42,7 @@ describe("Zap", () => {
       mExt = await MockExternalContract.deploy();
       await mExt.deployed();
       mExt2 = await MockExternalContract.deploy();
-      await mExt.deployed();
+      await mExt2.deployed();
     });
 
     it("Should not allow execution if caller is not owner", async () => {
@@ -181,6 +182,67 @@ describe("Zap", () => {
           value: getTotalValues(values),
         }),
       ).to.be.revertedWith("Zap: call failed");
+    });
+
+    describe("Pull ERC20 tokens", () => {
+      beforeEach(async () => {
+        const MockExternalContract = await ethers.getContractFactory("MockExternalContract");
+        mExt = await MockExternalContract.deploy();
+        await mExt.deployed();
+
+        const MockERC20 = await ethers.getContractFactory("MockERC20");
+        mErc20 = await MockERC20.deploy("TTK", "TTK", numToWei(1000, 18));
+        await mErc20.deployed();
+      });
+
+      it("Should not allow pulling ERC20 tokens if caller is not owner", async () => {
+        await mErc20.transfer(zap.address, numToWei(500, 18));
+        await expect(zap.connect(user2).pullAllTokens(mErc20.address)).to.be.revertedWith("Zap: caller !authorised");
+      });
+
+      it("Should allow pulling ERC20 tokens if caller is not owner", async () => {
+        const amount = numToWei(500, 18);
+        await mErc20.transfer(zap.address, amount);
+        expect(await mErc20.balanceOf(zap.address)).to.be.equal(amount);
+
+        await zap.connect(user1).pullAllTokens(mErc20.address);
+        expect(await mErc20.balanceOf(zap.address)).to.be.equal(0);
+        expect(await mErc20.balanceOf(user1.address)).to.be.equal(amount);
+      });
+
+      it("Should allow pulling ERC20 tokens via Zap", async () => {
+        const amount = numToWei(500, 18);
+        await mErc20.transfer(zap.address, amount);
+
+        const targets = [zap.address];
+        const values = ["0"];
+        const signatures = ["pullAllTokens(address)"];
+        const callDatas = [[mErc20.address]];
+        const parsedValues = values.map(value => numToWei(value, 18));
+        const callDatasEncoded = callDatas.map((e, i) => encodeParameters(signatures[i], e));
+        await zap.connect(user1).execute(targets, parsedValues, signatures, callDatasEncoded, {
+          value: getTotalValues(values),
+        });
+        expect(await mErc20.balanceOf(zap.address)).to.be.equal(0);
+        expect(await mErc20.balanceOf(user1.address)).to.be.equal(amount);
+      });
+
+      it("Should not allow pulling ERC20 tokens via Zap if caller is not owner", async () => {
+        const amount = numToWei(500, 18);
+        await mErc20.transfer(zap.address, amount);
+
+        const targets = [zap.address];
+        const values = ["0"];
+        const signatures = ["pullAllTokens(address)"];
+        const callDatas = [[mErc20.address]];
+        const parsedValues = values.map(value => numToWei(value, 18));
+        const callDatasEncoded = callDatas.map((e, i) => encodeParameters(signatures[i], e));
+        await expect(
+          zap.connect(user2).execute(targets, parsedValues, signatures, callDatasEncoded, {
+            value: getTotalValues(values),
+          }),
+        ).to.be.revertedWith("Zap: caller is not the owner");
+      });
     });
   });
 });

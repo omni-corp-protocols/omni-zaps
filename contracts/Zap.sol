@@ -2,7 +2,11 @@
 pragma solidity ^0.6.12;
 pragma experimental ABIEncoderV2;
 
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+
 contract Zap {
+    using SafeERC20 for IERC20;
+
     address public owner;
 
     /**
@@ -43,6 +47,13 @@ contract Zap {
             (bool success, bytes memory returndata) = targets[i].call{ value: values[i] }(callData);
             verifyCallResult(success, returndata, "Zap: call failed");
         }
+    }
+
+    function pullAllTokens(address token) public {
+        require(msg.sender == owner || msg.sender == address(this), "Zap: caller !authorised");
+
+        uint256 balance = IERC20(token).balanceOf(address(this));
+        IERC20(token).safeTransfer(owner, balance);
     }
 
     /// Private Functions
