@@ -1,5 +1,6 @@
 import "@typechain/hardhat";
 import "@nomiclabs/hardhat-waffle";
+import "@nomiclabs/hardhat-etherscan";
 import { HardhatUserConfig } from "hardhat/config";
 
 import * as dotenv from "dotenv";
@@ -11,6 +12,10 @@ const config: HardhatUserConfig = {
       url: process.env.bscRpc || "https://bsc-dataseed.binance.org/",
       accounts: [process.env["PRIVATE_KEY"]],
     },
+  },
+  etherscan: {
+    // Your API key to verify the contracts
+    apiKey: process.env["API_KEY"]
   },
   solidity: {
     version: "0.6.12",

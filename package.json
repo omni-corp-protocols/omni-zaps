@@ -109,5 +109,8 @@
       "node_modules/**",
       "typechain/**"
     ]
+  },
+  "devDependencies": {
+    "@nomiclabs/hardhat-etherscan": "^2.1.6"
   }
 }
