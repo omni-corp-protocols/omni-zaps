@@ -6,6 +6,7 @@ contract MockExternalContract {
     string public str;
     address public addr;
     uint256 public value;
+    uint256[3] public nums;
 
     function setNum(uint256 _num) public {
         num = _num;
@@ -36,5 +37,10 @@ contract MockExternalContract {
         num = num;
         // solhint-disable-next-line
         revert();
+    }
+
+    function setComplexTypes(uint256[3] memory _nums, uint256 _num) public {
+        nums = _nums;
+        num = _num;
     }
 }

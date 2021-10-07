@@ -15,7 +15,7 @@ const config: HardhatUserConfig = {
   },
   etherscan: {
     // Your API key to verify the contracts
-    apiKey: process.env["API_KEY"]
+    apiKey: process.env["API_KEY"],
   },
   solidity: {
     version: "0.6.12",

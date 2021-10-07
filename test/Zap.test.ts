@@ -244,5 +244,53 @@ describe("Zap", () => {
         ).to.be.revertedWith("Zap: caller is not the owner");
       });
     });
+
+    describe("Complex Calls", () => {
+      beforeEach(async () => {
+        const MockExternalContract = await ethers.getContractFactory("MockExternalContract");
+        mExt = await MockExternalContract.deploy();
+        await mExt.deployed();
+      });
+
+      it("Should perform calls with complex input types", async () => {
+        const abiCoder = ethers.utils.defaultAbiCoder;
+
+        const encodedComplex = abiCoder.encode(["uint256[3]", "uint256"], [["9", "8", "7"], "6"]);
+
+        const targets = [mExt2.address, mExt.address, mExt2.address];
+        const values = ["0", "0", "1"];
+        const signatures = [
+          "setNum(uint256)",
+          "setComplexTypes(uint256[3],uint256)",
+          "setStrAddrAndValue(string,address)",
+        ];
+
+        const parsedValues = values.map(value => numToWei(value, 18));
+        await zap
+          .connect(user1)
+          .execute(
+            targets,
+            parsedValues,
+            signatures,
+            [
+              encodeParameters(signatures[0], ["101"]),
+              encodedComplex,
+              encodeParameters(signatures[2], ["Some string", user1.address]),
+            ],
+            {
+              value: getTotalValues(values),
+            },
+          );
+
+        expect(await mExt2.num()).to.equal(101);
+        expect(await mExt.num()).to.equal(6);
+        expect(await mExt.nums(0)).to.equal(9);
+        expect(await mExt.nums(1)).to.equal(8);
+        expect(await mExt.nums(2)).to.equal(7);
+        expect(await mExt2.str()).to.equal("Some string");
+        expect(await mExt2.addr()).to.equal(user1.address);
+        expect(await mExt2.value()).to.equal(numToWei(values[2], 18));
+      });
+    });
   });
 });
