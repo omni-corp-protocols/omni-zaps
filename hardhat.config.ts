@@ -12,6 +12,14 @@ const config: HardhatUserConfig = {
       url: process.env.bscRpc || "https://bsc-dataseed.binance.org/",
       accounts: [process.env["PRIVATE_KEY"]],
     },
+    arbitrum: {
+      url: process.env.arbitrumRpc || "https://arb1.arbitrum.io/rpc",
+      accounts: [process.env["PRIVATE_KEY"]],
+    },
+    kovan: {
+      url: process.env.kovan || "https://kovan.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161",
+      accounts: [process.env["Privatkey_testing"]],
+    },
   },
   etherscan: {
     // Your API key to verify the contracts
